@@ -1,6 +1,6 @@
 import { Text, View, Image, StyleSheet, FlatList } from "react-native";
-import PostListitem from "../../components/PostListItem";
-import posts from "../../../assets/data/posts.json";
+import PostListitem from "../../../components/PostListItem";
+import posts from "../../../../assets/data/posts.json";
 
 export default function HomeScreen() {
   return (
