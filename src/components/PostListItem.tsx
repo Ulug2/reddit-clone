@@ -6,13 +6,15 @@ import { Link } from "expo-router";
 
 type PostListItemProps = {
   post: Post;
-  isDetailedPost?: boolean;
+  isDetailedPost?: boolean; // question mark means it is not required
 };
 
 export default function PostListItem({
   post,
   isDetailedPost,
 }: PostListItemProps) {
+  const shouldShowImage = isDetailedPost || post.image;
+  const shouldShowDescription = isDetailedPost || !post.image;
   return (
     <Link href={`/post/${post.id}`}>
       <View
@@ -76,14 +78,14 @@ export default function PostListItem({
         <Text style={{ fontWeight: "bold", fontSize: 17, letterSpacing: 0.5 }}>
           {post.title}
         </Text>
-        {post.image && (
+        {shouldShowImage && post.image && (
           <Image
             source={{ uri: post.image }}
             style={{ width: "100%", aspectRatio: 4 / 3, borderRadius: 15 }}
           />
         )}
 
-        {post.description && !post.image && (
+        {shouldShowDescription && post.description && (
           <Text numberOfLines={isDetailedPost ? undefined : 4}>
             {post.description}
           </Text>
