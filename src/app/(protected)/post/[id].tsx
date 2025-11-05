@@ -1,8 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useLocalSearchParams } from "expo-router";
 import {
-  Image,
-  ScrollView,
   Text,
   View,
   TextInput,
@@ -12,13 +10,10 @@ import {
   FlatList,
 } from "react-native";
 import posts from "../../../../assets/data/posts.json";
-import comments from "../../../../assets/data/comments.json";
 import PostListItem from "../../../components/PostListItem";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { formatDistanceToNowStrict } from "date-fns";
-import Entypo from "@expo/vector-icons/Entypo";
-import Octicons from "@expo/vector-icons/Octicons";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import comments from "../../../../assets/data/comments.json";
+import CommentListItem from "../../../components/CommentListItem";
 
 export default function PostDetailed() {
   const { id } = useLocalSearchParams();
@@ -26,6 +21,7 @@ export default function PostDetailed() {
 
   const [comment, setComment] = useState<string>("");
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
+  const inputRef = useRef<TextInput | null>(null);
 
   const detailedPost = posts.find((post) => post.id === id);
   const postComments = comments.filter(
@@ -35,6 +31,12 @@ export default function PostDetailed() {
   if (!detailedPost) {
     return <Text>Post Not Found!</Text>;
   }
+
+  // useCallback with memo inside CommentListItem prevents re-renders when replying to a comment
+  const handleReplyPress = useCallback((commentId: string) => {
+    console.log(commentId);
+    inputRef.current?.focus();
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -48,76 +50,11 @@ export default function PostDetailed() {
         }
         data={postComments}
         renderItem={({ item }) => (
-          <View
-            style={{
-              backgroundColor: "white",
-              marginTop: 10,
-              paddingHorizontal: 10,
-              paddingVertical: 5,
-              gap: 10,
-            }}
-          >
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 3 }}
-            >
-              <Image
-                source={{
-                  uri:
-                    item.user.image ||
-                    "https://notjustdev-dummy.s3.us-east-2.amazonaws.com/avatars/3.jpg",
-                }}
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 15,
-                  marginRight: 4,
-                }}
-              />
-              <Text
-                style={{ fontWeight: "600", color: "#737373", fontSize: 13 }}
-              >
-                {item.user.name}
-              </Text>
-              <Text style={{ color: "#737373", fontSize: 13 }}>&#x2022;</Text>
-              <Text style={{ color: "#737373", fontSize: 13 }}>
-                {formatDistanceToNowStrict(new Date(item.created_at))}
-              </Text>
-            </View>
-            <Text>{item.comment}</Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "flex-end",
-                alignItems: "center",
-                gap: 14,
-              }}
-            >
-              <Entypo name="dots-three-horizontal" size={15} color="#737373" />
-              <Octicons name="reply" size={16} color="#737373" />
-              <MaterialCommunityIcons
-                name="trophy-outline"
-                size={16}
-                color="#737373"
-              />
-              <View
-                style={{ flexDirection: "row", gap: 5, alignItems: "center" }}
-              >
-                <MaterialCommunityIcons
-                  name="arrow-up-bold-outline"
-                  size={18}
-                  color="#737373"
-                />
-                <Text style={{ fontWeight: "500", color: "#737373" }}>
-                  {item.upvotes}
-                </Text>
-                <MaterialCommunityIcons
-                  name="arrow-down-bold-outline"
-                  size={18}
-                  color="#737373"
-                />
-              </View>
-            </View>
-          </View>
+          <CommentListItem
+            comment={item}
+            depth={0}
+            handleReplyPress={handleReplyPress}
+          />
         )}
       />
       {/* POST A COMMENT */}
@@ -142,6 +79,7 @@ export default function PostDetailed() {
       >
         <TextInput
           placeholder="Join the conversation"
+          ref={inputRef}
           value={comment}
           onChangeText={(text) => setComment(text)}
           style={{ backgroundColor: "#E4E4E4", padding: 5, borderRadius: 5 }}
