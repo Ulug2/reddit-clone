@@ -1,14 +1,40 @@
-import { Text, View, Image, StyleSheet, FlatList } from "react-native";
-import PostListitem from "../../../components/PostListItem";
-import posts from "../../../../assets/data/posts.json";
+import { useState, useEffect } from "react";
+import { View, FlatList, Text } from "react-native";
+import { supabase } from "./../../../lib/supabase";
+import { Tables } from "../../../types/database.types";
+import PostListItem from "../../../components/PostListItem";
 
-export default function HomeScreen() {
+type Post = Tables<"posts"> & {
+  user: Tables<"users">;
+  group: Tables<"groups">;
+};
+
+const HomeScreen = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    const { data, error } = await supabase
+      .from("posts")
+      .select("*, group:groups(*), user:users!posts_user_id_fkey(*)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.log(error);
+    } else {
+      setPosts(data);
+    }
+  };
+
   return (
-    <View>
-      <FlatList
-        data={posts}
-        renderItem={({ item }) => <PostListitem post={item} />}
-      />
-    </View>
+    <FlatList
+      data={posts}
+      renderItem={({ item }) => <PostListItem post={item} />}
+    />
   );
-}
+};
+
+export default HomeScreen;
