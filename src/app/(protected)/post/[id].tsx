@@ -16,40 +16,43 @@ import comments from "../../../../assets/data/comments.json";
 import CommentListItem from "../../../components/CommentListItem";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPostById } from "../../../services/postService";
+import { Tables } from "../../../types/database.types";
 
-export default function PostDetailed() {
+type Post = Tables<"posts"> & {
+  user: Tables<"users">;
+  group: Tables<"groups">;
+};
+
+export default function DetailedPost() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const insets = useSafeAreaInsets();
 
+  const insets = useSafeAreaInsets();
   const [comment, setComment] = useState<string>("");
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
   const inputRef = useRef<TextInput | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["posts", id],
-    queryFn: () => {
-      fetchPostById(id);
-    },
-    staleTime: 10_000,
+    queryFn: () => fetchPostById(id),
   });
-
-  const postComments = comments.filter(
-    (comment) => comment.post_id === data?.id
-  );
-
-  if (isLoading) {
-    return <ActivityIndicator />;
-  }
-
-  if (error || !data) {
-    return <Text>Post Not Found!</Text>;
-  }
 
   // useCallback with memo inside CommentListItem prevents re-renders when replying to a comment
   const handleReplyPress = useCallback((commentId: string) => {
     console.log(commentId);
     inputRef.current?.focus();
   }, []);
+
+  // do conditional rendering after all hooks
+  if (isLoading) {
+    return <ActivityIndicator />;
+  }
+
+  if (error || !data) {
+    console.error("Error message: ", error);
+    return <Text>Post Not Found!</Text>;
+  }
+
+  const postComments = comments.filter((comment) => comment.post_id === id);
 
   return (
     <KeyboardAvoidingView

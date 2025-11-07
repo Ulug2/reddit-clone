@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase"
+import { TablesInsert } from "../types/database.types";
 
 export const fetchPosts = async () => {
   const { data, error } = await supabase
@@ -23,6 +24,21 @@ export const fetchPostById = async (id : string) => {
     if (error) {
         throw error;
     } else {
+        console.log("The single fetched post by id: ", data)
         return data;
     }
 };
+
+export const insertPost = async (post: TablesInsert<'posts'>) => {
+  const {data, error} = await supabase
+                              .from("posts")
+                              .insert(post)
+                              .select()
+                              .single();
+  if (error) {
+    throw error;
+  }
+  else {
+    return data;
+  }
+}

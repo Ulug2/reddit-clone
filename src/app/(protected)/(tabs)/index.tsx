@@ -15,6 +15,8 @@ const HomeScreen = () => {
     data: posts,
     isLoading,
     error,
+    refetch,
+    isRefetching,
   } = useQuery({
     queryKey: ["posts"],
     queryFn: () => fetchPosts(),
@@ -33,6 +35,8 @@ const HomeScreen = () => {
     <FlatList
       data={posts}
       renderItem={({ item }) => <PostListItem post={item} />}
+      onRefresh={refetch}
+      refreshing={isRefetching}
     />
   );
 };

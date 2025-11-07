@@ -15,12 +15,45 @@ import { Link, router } from "expo-router";
 import { useState } from "react";
 import { useAtom } from "jotai";
 import { selectedGroupAtom } from "../../../atoms";
+import { insertPost } from "../../../services/postService";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function CreateScreen() {
   const [title, setTitle] = useState<string>("");
   const [bodyText, setBodyText] = useState<string>("");
   // const [image, setImage] = useState<string | null>(null);
   const [group, setGroup] = useAtom(selectedGroupAtom);
+
+  const queryClient = useQueryClient();
+
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: () => {
+      if (!group) {
+        throw new Error("Please select a group");
+      }
+      if (!title) {
+        throw new Error("Please select a group");
+      }
+      return insertPost({
+        title: title,
+        description: bodyText,
+        group_id: "405272be-03cb-403d-a080-0c8c0e0fd4f4",
+        user_id: "54ea2a04-d2b5-406a-9848-b933858802b6",
+      });
+    },
+    onSuccess: (data) => {
+      console.log("succesfully added a new post: ", data);
+
+      // invalidate queries that might have been affected by inserting a post.
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+
+      goBack();
+    },
+    onError: (error) => {
+      console.log("Error message: ", error);
+      alert("Failed to insert!");
+    },
+  });
 
   const goBack = () => {
     setTitle("");
@@ -33,11 +66,12 @@ export default function CreateScreen() {
       style={{ backgroundColor: "white", flex: 1, paddingHorizontal: 10 }}
     >
       {/* HEADER */}
+      <AntDesign name="close" size={30} color="black" onPress={goBack} />
       <Pressable
-        onPress={goBack}
+        onPress={() => mutate()}
         style={{ flexDirection: "row", marginBottom: 5 }}
+        disabled={isPending}
       >
-        <AntDesign name="close" size={30} color="black" onPress={goBack} />
         <Text
           style={{
             backgroundColor: "#115BCA",
