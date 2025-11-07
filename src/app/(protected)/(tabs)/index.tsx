@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { View, FlatList, Text, ActivityIndicator } from "react-native";
-import { supabase } from "./../../../lib/supabase";
+import { fetchPosts } from "../../../services/postService";
 import { Tables } from "../../../types/database.types";
 import PostListItem from "../../../components/PostListItem";
 import { useQuery } from "@tanstack/react-query";
@@ -8,19 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 type Post = Tables<"posts"> & {
   user: Tables<"users">;
   group: Tables<"groups">;
-};
-
-const fetchPosts = async () => {
-  const { data, error } = await supabase
-    .from("posts")
-    .select("*, group:groups(*), user:users!posts_user_id_fkey(*)")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    throw error;
-  } else {
-    return data;
-  }
 };
 
 const HomeScreen = () => {

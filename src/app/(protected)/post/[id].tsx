@@ -8,27 +8,40 @@ import {
   KeyboardAvoidingView,
   Platform,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
-import posts from "../../../../assets/data/posts.json";
 import PostListItem from "../../../components/PostListItem";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import comments from "../../../../assets/data/comments.json";
 import CommentListItem from "../../../components/CommentListItem";
+import { useQuery } from "@tanstack/react-query";
+import { fetchPostById } from "../../../services/postService";
 
 export default function PostDetailed() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
   const [comment, setComment] = useState<string>("");
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
   const inputRef = useRef<TextInput | null>(null);
 
-  const detailedPost = posts.find((post) => post.id === id);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["posts", id],
+    queryFn: () => {
+      fetchPostById(id);
+    },
+    staleTime: 10_000,
+  });
+
   const postComments = comments.filter(
-    (comment) => comment.post_id === detailedPost?.id
+    (comment) => comment.post_id === data?.id
   );
 
-  if (!detailedPost) {
+  if (isLoading) {
+    return <ActivityIndicator />;
+  }
+
+  if (error || !data) {
     return <Text>Post Not Found!</Text>;
   }
 
@@ -45,9 +58,7 @@ export default function PostDetailed() {
       keyboardVerticalOffset={insets.top + 10}
     >
       <FlatList
-        ListHeaderComponent={
-          <PostListItem post={detailedPost} isDetailedPost />
-        }
+        ListHeaderComponent={<PostListItem post={data} isDetailedPost />}
         data={postComments}
         renderItem={({ item }) => (
           <CommentListItem

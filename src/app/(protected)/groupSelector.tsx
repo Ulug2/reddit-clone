@@ -8,27 +8,46 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { Link, router } from "expo-router";
-import groups from "../../../assets/data/groups.json";
 import { useSetAtom } from "jotai";
-import { Group } from "../../types";
 import { selectedGroupAtom } from "../../atoms";
+import { useQuery } from "@tanstack/react-query";
+import { fetchGroups } from "../../services/groupService";
+import { Tables } from "../../types/database.types";
+
+type Group = Tables<"groups">;
 
 export default function GroupSelector() {
   const [searchText, setSearchText] = useState<string>("");
   const setGroup = useSetAtom(selectedGroupAtom);
 
-  const filteredGroups = groups.filter((group) =>
-    group.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["groups", { searchText }],
+    queryFn: () => fetchGroups(searchText),
+    staleTime: 10_000,
+    placeholderData: (previousData) => previousData,
+  });
 
   const onGroupSelected = (group: Group) => {
     setGroup(group);
     router.back();
   };
+
+  if (isLoading) {
+    return <ActivityIndicator />;
+  }
+
+  if (error || !data) {
+    return <Text>Oops...Error Fetching Groups...</Text>;
+  }
+
+  const filteredGroups = data.filter((group) =>
+    group.name.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
     <KeyboardAvoidingView
