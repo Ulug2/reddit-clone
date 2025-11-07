@@ -29,7 +29,7 @@ export type Database = {
           id?: string
           parent_id?: string | null
           post_id: string
-          user_id: string
+          user_id?: string
         }
         Update: {
           comment?: string
@@ -52,13 +52,6 @@ export type Database = {
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "comments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -98,7 +91,7 @@ export type Database = {
           id?: string
           image?: string | null
           title: string
-          user_id: string
+          user_id?: string
         }
         Update: {
           created_at?: string | null
@@ -117,13 +110,6 @@ export type Database = {
             referencedRelation: "groups"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "posts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
         ]
       }
       upvotes: {
@@ -135,7 +121,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           post_id: string
-          user_id: string
+          user_id?: string
         }
         Update: {
           created_at?: string | null
@@ -148,13 +134,6 @@ export type Database = {
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "upvotes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -182,7 +161,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      requesting_user_id: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

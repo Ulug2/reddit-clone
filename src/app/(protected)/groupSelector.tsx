@@ -18,16 +18,18 @@ import { selectedGroupAtom } from "../../atoms";
 import { useQuery } from "@tanstack/react-query";
 import { fetchGroups } from "../../services/groupService";
 import { Tables } from "../../types/database.types";
+import { useSupabase } from "../../lib/supabase";
 
 type Group = Tables<"groups">;
 
 export default function GroupSelector() {
+  const supabase = useSupabase();
   const [searchText, setSearchText] = useState<string>("");
   const setGroup = useSetAtom(selectedGroupAtom);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["groups", { searchText }],
-    queryFn: () => fetchGroups(searchText),
+    queryFn: () => fetchGroups(searchText, supabase),
     staleTime: 10_000,
     placeholderData: (previousData) => previousData,
   });

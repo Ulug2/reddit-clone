@@ -1,11 +1,12 @@
-import { supabase } from "../lib/supabase"
 import { TablesInsert } from "../types/database.types";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { Database } from "../types/database.types";
 
-export const fetchPosts = async () => {
+export const fetchPosts = async (supabase: SupabaseClient<Database>) => {
   const { data, error } = await supabase
     .from("posts")
-    .select("*, group:groups(*), user:users!posts_user_id_fkey(*)")
-    .order("created_at", { ascending: false });
+    .select("*, group:groups(*)")
+    .order("created_at", { ascending: false })
 
   if (error) {
     throw error;
@@ -14,22 +15,22 @@ export const fetchPosts = async () => {
   }
 };
 
-export const fetchPostById = async (id : string) => {
+export const fetchPostById = async (id : string, supabase: SupabaseClient<Database>) => {
     const {data, error} = await supabase
         .from("posts")
-        .select("*, group:groups(*), user:users!posts_user_id_fkey(*)")
+        .select("*, group:groups(*)")
         .eq('id', id)
         .single();      // to return a single object, not an array
 
     if (error) {
         throw error;
     } else {
-        console.log("The single fetched post by id: ", data)
+        // console.log("The single fetched post by id: ", data)
         return data;
     }
 };
 
-export const insertPost = async (post: TablesInsert<'posts'>) => {
+export const insertPost = async (post: TablesInsert<'posts'>, supabase: SupabaseClient<Database>) => {
   const {data, error} = await supabase
                               .from("posts")
                               .insert(post)

@@ -17,8 +17,10 @@ import { useAtom } from "jotai";
 import { selectedGroupAtom } from "../../../atoms";
 import { insertPost } from "../../../services/postService";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSupabase } from "../../../lib/supabase";
 
 export default function CreateScreen() {
+  const supabase = useSupabase();
   const [title, setTitle] = useState<string>("");
   const [bodyText, setBodyText] = useState<string>("");
   // const [image, setImage] = useState<string | null>(null);
@@ -34,12 +36,14 @@ export default function CreateScreen() {
       if (!title) {
         throw new Error("Please select a group");
       }
-      return insertPost({
-        title: title,
-        description: bodyText,
-        group_id: "405272be-03cb-403d-a080-0c8c0e0fd4f4",
-        user_id: "54ea2a04-d2b5-406a-9848-b933858802b6",
-      });
+      return insertPost(
+        {
+          title: title,
+          description: bodyText,
+          group_id: group.id,
+        },
+        supabase
+      );
     },
     onSuccess: (data) => {
       console.log("succesfully added a new post: ", data);

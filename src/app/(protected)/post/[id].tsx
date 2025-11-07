@@ -17,6 +17,7 @@ import CommentListItem from "../../../components/CommentListItem";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPostById } from "../../../services/postService";
 import { Tables } from "../../../types/database.types";
+import { useSupabase } from "../../../lib/supabase";
 
 type Post = Tables<"posts"> & {
   user: Tables<"users">;
@@ -24,6 +25,7 @@ type Post = Tables<"posts"> & {
 };
 
 export default function DetailedPost() {
+  const supabase = useSupabase();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const insets = useSafeAreaInsets();
@@ -33,7 +35,7 @@ export default function DetailedPost() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["posts", id],
-    queryFn: () => fetchPostById(id),
+    queryFn: () => fetchPostById(id, supabase),
   });
 
   // useCallback with memo inside CommentListItem prevents re-renders when replying to a comment
