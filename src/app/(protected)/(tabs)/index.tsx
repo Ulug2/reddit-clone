@@ -1,33 +1,46 @@
 import { useState, useEffect } from "react";
-import { View, FlatList, Text } from "react-native";
+import { View, FlatList, Text, ActivityIndicator } from "react-native";
 import { supabase } from "./../../../lib/supabase";
 import { Tables } from "../../../types/database.types";
 import PostListItem from "../../../components/PostListItem";
+import { useQuery } from "@tanstack/react-query";
 
 type Post = Tables<"posts"> & {
   user: Tables<"users">;
   group: Tables<"groups">;
 };
 
+const fetchPosts = async () => {
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*, group:groups(*), user:users!posts_user_id_fkey(*)")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  } else {
+    return data;
+  }
+};
+
 const HomeScreen = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const {
+    data: posts,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["posts"],
+    queryFn: () => fetchPosts(),
+  });
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
+  if (isLoading) {
+    return <ActivityIndicator />;
+  }
 
-  const fetchPosts = async () => {
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*, group:groups(*), user:users!posts_user_id_fkey(*)")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.log(error);
-    } else {
-      setPosts(data);
-    }
-  };
+  if (error) {
+    console.log(error);
+    return <Text>Error Fetching Posts</Text>;
+  }
 
   return (
     <FlatList
