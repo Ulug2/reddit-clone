@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import {
   Text,
   View,
@@ -9,15 +9,17 @@ import {
   Platform,
   FlatList,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import PostListItem from "../../../components/PostListItem";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import comments from "../../../../assets/data/comments.json";
 import CommentListItem from "../../../components/CommentListItem";
-import { useQuery } from "@tanstack/react-query";
-import { fetchPostById } from "../../../services/postService";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deletePostById, fetchPostById } from "../../../services/postService";
 import { Tables } from "../../../types/database.types";
 import { useSupabase } from "../../../lib/supabase";
+import { AntDesign, Entypo, MaterialIcons } from "@expo/vector-icons";
 
 type Post = Tables<"posts"> & {
   user: Tables<"users">;
@@ -27,6 +29,7 @@ type Post = Tables<"posts"> & {
 export default function DetailedPost() {
   const supabase = useSupabase();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const queryClient = useQueryClient();
 
   const insets = useSafeAreaInsets();
   const [comment, setComment] = useState<string>("");
@@ -36,6 +39,20 @@ export default function DetailedPost() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["posts", id],
     queryFn: () => fetchPostById(id, supabase),
+  });
+
+  const { mutate: remove } = useMutation({
+    mutationFn: () => deletePostById(id, supabase),
+    onSuccess: (data) => {
+      console.log("Post deleted successfully");
+      // invalidate queries that might have been affected by inserting a post.
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      router.back();
+    },
+    onError: (error) => {
+      console.log("error: ", error);
+      Alert.alert("Failed to delete post");
+    },
   });
 
   // useCallback with memo inside CommentListItem prevents re-renders when replying to a comment
@@ -62,6 +79,24 @@ export default function DetailedPost() {
       style={{ flex: 1 }}
       keyboardVerticalOffset={insets.top + 10}
     >
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <Entypo
+                name="trash"
+                size={24}
+                color="white"
+                onPress={() => remove()}
+              />
+              <AntDesign name="search" size={24} color="white" />
+              <MaterialIcons name="sort" size={27} color="white" />
+              <Entypo name="dots-three-horizontal" size={24} color="white" />
+            </View>
+          ),
+          animation: "slide_from_bottom",
+        }}
+      />
       <FlatList
         ListHeaderComponent={<PostListItem post={data} isDetailedPost />}
         data={postComments}

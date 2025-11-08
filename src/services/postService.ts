@@ -43,3 +43,16 @@ export const insertPost = async (post: TablesInsert<'posts'>, supabase: Supabase
     return data;
   }
 }
+
+export const deletePostById = async (
+  id: string,
+  supabase: SupabaseClient<Database>
+) => {
+  const {data, error} = await supabase.from("posts").delete().eq("id", id);
+  if (error) {
+    throw error;
+  }
+  else {
+    return data;
+  }
+};
