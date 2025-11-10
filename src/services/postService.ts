@@ -5,7 +5,7 @@ import { Database } from "../types/database.types";
 export const fetchPosts = async (supabase: SupabaseClient<Database>) => {
   const { data, error } = await supabase
     .from("posts")
-    .select("*, group:groups(*)")
+    .select("*, group:groups(*), upvotes(value.sum())")
     .order("created_at", { ascending: false })
 
   if (error) {
@@ -18,9 +18,10 @@ export const fetchPosts = async (supabase: SupabaseClient<Database>) => {
 export const fetchPostById = async (id : string, supabase: SupabaseClient<Database>) => {
     const {data, error} = await supabase
         .from("posts")
-        .select("*, group:groups(*)")
+        .select("*, group:groups(*), upvotes(value.sum())")
         .eq('id', id)
         .single();      // to return a single object, not an array
+    console.log(data);
 
     if (error) {
         throw error;

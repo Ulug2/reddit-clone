@@ -7,6 +7,7 @@ import { Tables } from "../types/database.types";
 type Post = Tables<"posts"> & {
   // user: Tables<"users">;
   group: Tables<"groups">;
+  upvotes: { sum: number }[];
 };
 
 type PostListItemProps = {
@@ -112,7 +113,7 @@ export default function PostListItem({
                   alignSelf: "center",
                 }}
               >
-                {post.upvotes}
+                {post.upvotes[0].sum || 0}
               </Text>
               <View
                 style={{
