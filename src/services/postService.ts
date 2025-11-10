@@ -31,41 +31,6 @@ export const fetchPostById = async (id : string, supabase: SupabaseClient<Databa
     }
 };
 
-export const fetchComments = async (
-  post_id: string,
-  supabase: SupabaseClient<Database>
-) => {
-  const {data, error} = await supabase
-  .from("comments")
-  .select("*, replies:comments(*)")
-  .eq("post_id", post_id)
-  .is("parent_id", null);
-
-  if (error) {
-    throw error;
-  } 
-  else {
-    return data;
-  }
-}
-
-export const fetchCommentReplies = async (
-  parentId: string,
-  supabase: SupabaseClient<Database>
-) => {
-  const {data, error} = await supabase
-  .from("comments")
-  .select("*, replies:comments(*)")
-  .eq("parent_id", parentId);
-
-  if (error) {
-    throw error;
-  } 
-  else {
-    return data;
-  }
-}
-
 export const insertPost = async (post: TablesInsert<'posts'>, supabase: SupabaseClient<Database>) => {
   const {data, error} = await supabase
                               .from("posts")

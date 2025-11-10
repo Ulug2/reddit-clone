@@ -15,14 +15,14 @@ import PostListItem from "../../../components/PostListItem";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CommentListItem from "../../../components/CommentListItem";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  deletePostById,
-  fetchComments,
-  fetchPostById,
-} from "../../../services/postService";
+import { deletePostById, fetchPostById } from "../../../services/postService";
 import { Tables } from "../../../types/database.types";
 import { useSupabase } from "../../../lib/supabase";
 import { AntDesign, Entypo, MaterialIcons } from "@expo/vector-icons";
+import {
+  fetchComments,
+  insertComment,
+} from "../../../services/commentsService";
 
 type Post = Tables<"posts"> & {
   user: Tables<"users">;
@@ -38,6 +38,8 @@ export default function DetailedPost() {
   const [comment, setComment] = useState<string>("");
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
   const inputRef = useRef<TextInput | null>(null);
+
+  const [replyToId, setReplyToId] = useState<string | null>(null);
 
   const {
     data: post,
@@ -69,8 +71,28 @@ export default function DetailedPost() {
     },
   });
 
+  const { mutate: createComment } = useMutation({
+    mutationFn: () =>
+      insertComment({ comment, post_id: id, parent_id: replyToId }, supabase),
+    onSuccess: (data) => {
+      console.log("Comment posted successfully");
+      // invalidate queries that might have been affected by inserting a comment.
+      setComment("");
+      setReplyToId(null);
+      queryClient.invalidateQueries({ queryKey: ["comments", { postId: id }] });
+      queryClient.invalidateQueries({
+        queryKey: ["comments", { parentId: replyToId }],
+      });
+    },
+    onError: (error) => {
+      console.log("error: ", error);
+      Alert.alert("Failed to post a comment");
+    },
+  });
+
   // useCallback with memo inside CommentListItem prevents re-renders when replying to a comment
   const handleReplyPress = useCallback((commentId: string) => {
+    setReplyToId(commentId);
     console.log(commentId);
     inputRef.current?.focus();
   }, []);
@@ -153,7 +175,7 @@ export default function DetailedPost() {
         {isInputFocused && (
           <Pressable
             disabled={!comment}
-            onPress={() => console.error("Pressed")}
+            onPress={() => createComment()}
             style={{
               backgroundColor: !comment ? "lightgrey" : "#0d469b",
               borderRadius: 15,

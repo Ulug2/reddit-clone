@@ -3,7 +3,7 @@ import { View, Text, Image, FlatList, Pressable } from "react-native";
 import { Entypo, Octicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatDistanceToNowStrict } from "date-fns";
 import { Tables } from "../types/database.types";
-import { fetchCommentReplies } from "../services/postService";
+import { fetchCommentReplies } from "../services/commentsService";
 import { useQuery } from "@tanstack/react-query";
 import { useSupabase } from "../lib/supabase";
 
@@ -42,7 +42,7 @@ const CommentListItem = ({
       }}
     >
       {/* User Info */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+      {/* <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
         <Image
           source={{
             uri:
@@ -58,7 +58,7 @@ const CommentListItem = ({
         <Text style={{ color: "#737373", fontSize: 13 }}>
           {formatDistanceToNowStrict(new Date(comment.created_at))}
         </Text>
-      </View>
+      </View> */}
 
       {/* Comment Content */}
       <Text>{comment.comment}</Text>
@@ -91,7 +91,7 @@ const CommentListItem = ({
             color="#737373"
           />
           <Text style={{ fontWeight: "500", color: "#737373" }}>
-            {comment.upvotes}
+            {/* {comment.upvotes} */}
           </Text>
           <MaterialCommunityIcons
             name="arrow-down-bold-outline"
