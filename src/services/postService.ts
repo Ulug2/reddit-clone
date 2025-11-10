@@ -24,12 +24,47 @@ export const fetchPostById = async (id : string, supabase: SupabaseClient<Databa
     console.log(data);
 
     if (error) {
-        throw error;
+      throw error;
     } else {
-        // console.log("The single fetched post by id: ", data)
-        return data;
+      // console.log("The single fetched post by id: ", data)
+      return data;
     }
 };
+
+export const fetchComments = async (
+  post_id: string,
+  supabase: SupabaseClient<Database>
+) => {
+  const {data, error} = await supabase
+  .from("comments")
+  .select("*, replies:comments(*)")
+  .eq("post_id", post_id)
+  .is("parent_id", null);
+
+  if (error) {
+    throw error;
+  } 
+  else {
+    return data;
+  }
+}
+
+export const fetchCommentReplies = async (
+  parentId: string,
+  supabase: SupabaseClient<Database>
+) => {
+  const {data, error} = await supabase
+  .from("comments")
+  .select("*, replies:comments(*)")
+  .eq("parent_id", parentId);
+
+  if (error) {
+    throw error;
+  } 
+  else {
+    return data;
+  }
+}
 
 export const insertPost = async (post: TablesInsert<'posts'>, supabase: SupabaseClient<Database>) => {
   const {data, error} = await supabase

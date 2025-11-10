@@ -3,6 +3,10 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { formatDistanceToNowStrict } from "date-fns";
 import { Link } from "expo-router";
 import { Tables } from "../types/database.types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createUpvote, selectMyVote } from "../services/upvotesServise";
+import { useSupabase } from "../lib/supabase";
+import { useSession } from "@clerk/clerk-expo";
 
 type Post = Tables<"posts"> & {
   // user: Tables<"users">;
@@ -21,6 +25,30 @@ export default function PostListItem({
 }: PostListItemProps) {
   const shouldShowImage = isDetailedPost || post.image;
   const shouldShowDescription = isDetailedPost || !post.image;
+  const supabase = useSupabase();
+  const queryClient = useQueryClient();
+
+  const { mutate: upvote } = useMutation({
+    mutationFn: (value: 1 | -1) => createUpvote(post.id, value, supabase),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+    onError: (error) => {
+      console.log("Error message: ", error);
+      alert("Failed to insert!");
+    },
+  });
+
+  const { session } = useSession();
+
+  const { data: myVote } = useQuery({
+    queryKey: ["posts", post.id, "my-upvote"],
+    queryFn: () => selectMyVote(post.id, session?.user.id, supabase),
+  });
+
+  const isUpvoted = myVote?.value === 1;
+  const isDownvoted = myVote?.value === -1;
+
   return (
     <Link href={`/post/${post.id}`} asChild>
       <Pressable
@@ -102,9 +130,10 @@ export default function PostListItem({
           <View style={{ flexDirection: "row", gap: 10 }}>
             <View style={[{ flexDirection: "row" }, styles.iconBox]}>
               <MaterialCommunityIcons
-                name="arrow-up-bold-outline"
+                onPress={() => upvote(1)}
+                name={isUpvoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
                 size={19}
-                color="black"
+                color={isUpvoted ? "crimson" : "black"}
               />
               <Text
                 style={{
@@ -125,9 +154,12 @@ export default function PostListItem({
                 }}
               />
               <MaterialCommunityIcons
-                name="arrow-down-bold-outline"
+                onPress={() => upvote(-1)}
+                name={
+                  isDownvoted ? "arrow-down-bold" : "arrow-down-bold-outline"
+                }
                 size={19}
-                color="black"
+                color={isDownvoted ? "crimson" : "black"}
               />
             </View>
             <View style={[{ flexDirection: "row" }, styles.iconBox]}>

@@ -2,7 +2,12 @@ import { useState, memo } from "react";
 import { View, Text, Image, FlatList, Pressable } from "react-native";
 import { Entypo, Octicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatDistanceToNowStrict } from "date-fns";
-import { Comment } from "../types";
+import { Tables } from "../types/database.types";
+import { fetchCommentReplies } from "../services/postService";
+import { useQuery } from "@tanstack/react-query";
+import { useSupabase } from "../lib/supabase";
+
+type Comment = Tables<"comments">;
 
 type CommentListItemProps = {
   comment: Comment;
@@ -16,6 +21,13 @@ const CommentListItem = ({
   handleReplyPress,
 }: CommentListItemProps) => {
   const [showReplies, setShowReplies] = useState(false);
+
+  const supabase = useSupabase();
+
+  const { data: replies } = useQuery({
+    queryKey: ["comments", { parentId: comment.id }],
+    queryFn: () => fetchCommentReplies(comment.id, supabase),
+  });
 
   return (
     <View
@@ -90,7 +102,7 @@ const CommentListItem = ({
       </View>
 
       {/* Show Replies Button */}
-      {comment.replies.length > 0 && depth < 5 && !showReplies && (
+      {!!replies?.length && !showReplies && depth < 5 && (
         <Pressable
           onPress={() => setShowReplies(true)}
           style={{
@@ -114,9 +126,9 @@ const CommentListItem = ({
       )}
 
       {/* Nested Replies */}
-      {showReplies && (
+      {showReplies && replies?.length && (
         <FlatList
-          data={comment.replies}
+          data={replies}
           keyExtractor={(reply) => reply.id}
           renderItem={({ item }) => (
             <CommentListItem

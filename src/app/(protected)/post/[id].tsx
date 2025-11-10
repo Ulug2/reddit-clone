@@ -13,10 +13,13 @@ import {
 } from "react-native";
 import PostListItem from "../../../components/PostListItem";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import comments from "../../../../assets/data/comments.json";
 import CommentListItem from "../../../components/CommentListItem";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deletePostById, fetchPostById } from "../../../services/postService";
+import {
+  deletePostById,
+  fetchComments,
+  fetchPostById,
+} from "../../../services/postService";
 import { Tables } from "../../../types/database.types";
 import { useSupabase } from "../../../lib/supabase";
 import { AntDesign, Entypo, MaterialIcons } from "@expo/vector-icons";
@@ -36,10 +39,21 @@ export default function DetailedPost() {
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
   const inputRef = useRef<TextInput | null>(null);
 
-  const { data, isLoading, error } = useQuery({
+  const {
+    data: post,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["posts", id],
     queryFn: () => fetchPostById(id, supabase),
   });
+
+  const { data: comments } = useQuery({
+    queryKey: ["comments", { postId: id }],
+    queryFn: () => fetchComments(id, supabase),
+  });
+
+  console.log(JSON.stringify(comments, null, 2));
 
   const { mutate: remove } = useMutation({
     mutationFn: () => deletePostById(id, supabase),
@@ -66,12 +80,10 @@ export default function DetailedPost() {
     return <ActivityIndicator />;
   }
 
-  if (error || !data) {
+  if (error || !post) {
     console.error("Error message: ", error);
     return <Text>Post Not Found!</Text>;
   }
-
-  const postComments = comments.filter((comment) => comment.post_id === id);
 
   return (
     <KeyboardAvoidingView
@@ -98,8 +110,8 @@ export default function DetailedPost() {
         }}
       />
       <FlatList
-        ListHeaderComponent={<PostListItem post={data} isDetailedPost />}
-        data={postComments}
+        ListHeaderComponent={<PostListItem post={post} isDetailedPost />}
+        data={comments}
         renderItem={({ item }) => (
           <CommentListItem
             comment={item}
