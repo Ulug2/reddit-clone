@@ -1,27 +1,34 @@
-import { useState, useEffect } from "react";
-import { View, FlatList, Text, ActivityIndicator } from "react-native";
-import { fetchPosts } from "../../../services/postService";
-import { Tables } from "../../../types/database.types";
+import { FlatList, ActivityIndicator, Text, Button } from "react-native";
 import PostListItem from "../../../components/PostListItem";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { fetchPosts } from "../../../services/postService";
 import { useSupabase } from "../../../lib/supabase";
 
-type Post = Tables<"posts"> & {
-  // user: Tables<"users">;
-  group: Tables<"groups">;
-};
-
-const HomeScreen = () => {
+export default function HomeScreen() {
   const supabase = useSupabase();
+
   const {
-    data: posts,
+    data,
     isLoading,
     error,
     refetch,
     isRefetching,
-  } = useQuery({
+    fetchNextPage,
+    isFetchingNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
     queryKey: ["posts"],
-    queryFn: () => fetchPosts(supabase),
+    queryFn: ({ pageParam }) => fetchPosts(pageParam, supabase),
+    initialPageParam: { limit: 3, offset: 0 },
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length === 0) {
+        return undefined;
+      }
+      return {
+        limit: 2,
+        offset: allPages.flat().length,
+      };
+    },
   });
 
   if (isLoading) {
@@ -30,8 +37,10 @@ const HomeScreen = () => {
 
   if (error) {
     console.log(error);
-    return <Text>Error Fetching Posts</Text>;
+    return <Text>Error fetching posts</Text>;
   }
+
+  const posts = data?.pages.flat() || [];
 
   return (
     <FlatList
@@ -39,8 +48,9 @@ const HomeScreen = () => {
       renderItem={({ item }) => <PostListItem post={item} />}
       onRefresh={refetch}
       refreshing={isRefetching}
+      onEndReachedThreshold={2}
+      onEndReached={() => !isFetchingNextPage && hasNextPage && fetchNextPage()}
+      ListFooterComponent={isFetchingNextPage ? <ActivityIndicator /> : null}
     />
   );
-};
-
-export default HomeScreen;
+}
