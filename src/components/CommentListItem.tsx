@@ -1,11 +1,15 @@
 import { useState, memo } from "react";
-import { View, Text, Image, FlatList, Pressable } from "react-native";
+import { View, Text, Image, FlatList, Pressable, Alert } from "react-native";
 import { Entypo, Octicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatDistanceToNowStrict } from "date-fns";
 import { Tables } from "../types/database.types";
-import { fetchCommentReplies } from "../services/commentsService";
-import { useQuery } from "@tanstack/react-query";
+import {
+  deleteComment,
+  fetchCommentReplies,
+} from "../services/commentsService";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "../lib/supabase";
+import { useUser } from "@clerk/clerk-expo";
 
 type Comment = Tables<"comments">;
 
@@ -23,10 +27,32 @@ const CommentListItem = ({
   const [showReplies, setShowReplies] = useState(false);
 
   const supabase = useSupabase();
+  const { user } = useUser();
+
+  // Check if this comment belongs to the current user
+  const isYourComment = user?.id === comment.user_id;
 
   const { data: replies } = useQuery({
     queryKey: ["comments", { parentId: comment.id }],
     queryFn: () => fetchCommentReplies(comment.id, supabase),
+  });
+
+  const queryClient = useQueryClient();
+
+  const { mutate: removeComment } = useMutation({
+    mutationFn: () => deleteComment(comment.id, supabase),
+    onSuccess(data) {
+      queryClient.invalidateQueries({
+        queryKey: ["comments", { postId: comment.post_id }],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["comments", { parentId: comment.parent_id }],
+      });
+    },
+    onError: (error) => {
+      console.log("error: ", error);
+      Alert.alert("Failed to delete a comment");
+    },
   });
 
   return (
@@ -72,7 +98,14 @@ const CommentListItem = ({
           gap: 14,
         }}
       >
-        <Entypo name="dots-three-horizontal" size={15} color="#737373" />
+        {!!isYourComment && (
+          <Entypo
+            name="trash"
+            size={15}
+            color="#737373"
+            onPress={() => removeComment()}
+          />
+        )}
         <Octicons
           name="reply"
           size={16}
@@ -126,7 +159,7 @@ const CommentListItem = ({
       )}
 
       {/* Nested Replies */}
-      {showReplies && replies?.length && (
+      {showReplies && !!replies?.length && (
         <FlatList
           data={replies}
           keyExtractor={(reply) => reply.id}
