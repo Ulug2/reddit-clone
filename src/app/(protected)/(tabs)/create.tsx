@@ -19,6 +19,7 @@ import { insertPost } from "../../../services/postService";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "../../../lib/supabase";
 import * as ImagePicker from "expo-image-picker";
+import { uploadImage } from "../../../utils/supabaseImages";
 
 export default function CreateScreen() {
   const supabase = useSupabase();
@@ -31,7 +32,7 @@ export default function CreateScreen() {
   const queryClient = useQueryClient();
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: () => {
+    mutationFn: (imagePath: string | undefined) => {
       if (!group) {
         throw new Error("Please select a group");
       }
@@ -43,6 +44,7 @@ export default function CreateScreen() {
           title: title,
           description: bodyText,
           group_id: group.id,
+          image: imagePath,
         },
         supabase
       );
@@ -61,9 +63,15 @@ export default function CreateScreen() {
     },
   });
 
+  const onPostClicked = async () => {
+    let imagePath = image ? await uploadImage(image, supabase) : undefined;
+    mutate(imagePath);
+  };
+
   const goBack = () => {
     setTitle("");
     setBodyText("");
+    setImage(null);
     router.back();
   };
 
@@ -89,7 +97,7 @@ export default function CreateScreen() {
       {/* HEADER */}
       <AntDesign name="close" size={30} color="black" onPress={goBack} />
       <Pressable
-        onPress={() => mutate()}
+        onPress={() => onPostClicked()}
         style={{ flexDirection: "row", marginBottom: 5 }}
         disabled={isPending}
       >
@@ -154,6 +162,14 @@ export default function CreateScreen() {
           </Link>
 
           {/* INPUTS */}
+          <TextInput
+            placeholder="Title"
+            style={{ fontSize: 20, fontWeight: "bold", paddingVertical: 20 }}
+            value={title}
+            onChangeText={(text) => setTitle(text)}
+            multiline // to allow multiple lines
+            scrollEnabled={false}
+          />
           {image && (
             <View style={{ paddingBottom: 20, paddingTop: 10 }}>
               <AntDesign
@@ -177,15 +193,6 @@ export default function CreateScreen() {
               />
             </View>
           )}
-
-          <TextInput
-            placeholder="Title"
-            style={{ fontSize: 20, fontWeight: "bold", paddingVertical: 20 }}
-            value={title}
-            onChangeText={(text) => setTitle(text)}
-            multiline // to allow multiple lines
-            scrollEnabled={false}
-          />
           <TextInput
             placeholder="Body text (optional)"
             style={{}}
