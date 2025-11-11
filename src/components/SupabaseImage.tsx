@@ -20,8 +20,10 @@ export default function SupabaseImage({
 
   const handleDownload = async () => {
     const result = await downloadImage(path, supabase);
-    setImage(result);
-
+    // Type guard to ensure result is a string
+    if (typeof result === 'string') {
+      setImage(result);
+    }
     setIsLoading(false);
   };
 

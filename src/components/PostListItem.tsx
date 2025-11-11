@@ -10,7 +10,7 @@ import { useSession } from "@clerk/clerk-expo";
 import SupabaseImage from "./SupabaseImage";
 
 type Post = Tables<"posts"> & {
-  // user: Tables<"users">;
+  user?: Tables<"users">; // Make user optional with ?
   group: Tables<"groups">;
   upvotes: { sum: number }[];
   nr_of_comments: { count: number }[];
@@ -37,7 +37,7 @@ export default function PostListItem({
     },
     onError: (error) => {
       console.log("Error message: ", error);
-      alert("Failed to insert!");
+      alert("Failed to vote!");
     },
   });
 
@@ -82,14 +82,14 @@ export default function PostListItem({
                 {formatDistanceToNowStrict(new Date(post.created_at))}
               </Text>
             </View>
-            {isDetailedPost && (
+            {isDetailedPost && post.user && (
               <Text style={{ fontSize: 13, color: "#2E5DAA" }}>
-                {post.user?.name}
+                {post.user.name}
               </Text>
             )}
           </View>
           <Pressable
-            onPress={() => console.error("Pressed")}
+            onPress={() => console.log("Join pressed")}
             style={{
               marginLeft: "auto",
               backgroundColor: "#0d469b",
